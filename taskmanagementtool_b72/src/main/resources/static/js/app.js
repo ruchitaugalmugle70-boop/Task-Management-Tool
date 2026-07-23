@@ -799,3 +799,109 @@ async function saveProfile(e) {
     showToast('Failed to update user profile or email already taken', 'error');
   }
 }
+
+// 15. JWT USER AUTHENTICATION & LOGIN / REGISTER
+function switchAuthTab(tab) {
+  const loginForm = document.getElementById('loginForm');
+  const regForm = document.getElementById('registerForm');
+  const tabLogin = document.getElementById('tabAuthLogin');
+  const tabReg = document.getElementById('tabAuthRegister');
+  const title = document.getElementById('authModalTitle');
+
+  if (tab === 'login') {
+    loginForm.style.display = 'block';
+    regForm.style.display = 'none';
+    tabLogin.style.borderBottom = '2px solid var(--primary)';
+    tabLogin.style.color = 'var(--text-primary)';
+    tabReg.style.borderBottom = 'none';
+    tabReg.style.color = 'var(--text-muted)';
+    title.textContent = 'Sign In to TaskFlow';
+  } else {
+    loginForm.style.display = 'none';
+    regForm.style.display = 'block';
+    tabReg.style.borderBottom = '2px solid var(--primary)';
+    tabReg.style.color = 'var(--text-primary)';
+    tabLogin.style.borderBottom = 'none';
+    tabLogin.style.color = 'var(--text-muted)';
+    title.textContent = 'Register New Account';
+  }
+}
+
+async function submitLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/user_auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userOfficialEmail: email, password: pass })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const token = data.token || data.message || data;
+      if (typeof token === 'string' && token.length > 10) {
+        localStorage.setItem('jwtToken', token);
+      }
+      currentProfileEmail = email;
+      closeModal('authModal');
+      showToast('Signed in successfully with JWT token!');
+      updateAuthHeaderUI(email);
+      await loadProfile();
+    } else {
+      showToast('Invalid email or password', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to sign in', 'error');
+  }
+}
+
+async function submitRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  const role = document.getElementById('regRole').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/user_auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userName: name, userOfficialEmail: email, password: pass, role: role })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('jwtToken', data.token);
+      }
+      currentProfileEmail = email;
+      closeModal('authModal');
+      showToast('Account registered & JWT issued!');
+      updateAuthHeaderUI(email, name);
+      await loadProfile();
+    } else {
+      showToast('Registration failed or email taken', 'error');
+    }
+  } catch (err) {
+    showToast('Failed to register account', 'error');
+  }
+}
+
+function updateAuthHeaderUI(email, name = null) {
+  const btnAuth = document.getElementById('btnAuthModal');
+  if (btnAuth) {
+    btnAuth.innerHTML = `<i class="fa-solid fa-user-check"></i> ${email.split('@')[0]}`;
+    btnAuth.style.borderColor = 'var(--emerald)';
+    btnAuth.style.color = 'var(--emerald)';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('jwtToken');
+  if (token) {
+    updateAuthHeaderUI(currentProfileEmail);
+  }
+});

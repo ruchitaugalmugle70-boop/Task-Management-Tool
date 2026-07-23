@@ -52,6 +52,10 @@
         <i class="fa-solid fa-plus"></i> New Task
       </button>
 
+      <button class="btn btn-outline btn-sm" id="btnAuthModal" onclick="openModal('authModal')" style="padding: 6px 12px; font-size: 12px;">
+        <i class="fa-solid fa-key"></i> Sign In / JWT
+      </button>
+
       <div class="user-pill" onclick="switchTab('profile')">
         <div class="user-avatar" id="headerAvatar">AM</div>
         <span class="user-name" id="headerName">Alex Mercer</span>
@@ -573,6 +577,52 @@
         <button type="button" class="btn btn-danger btn-sm" id="btnDeleteTask" onclick="deleteCurrentTask()"><i class="fa-solid fa-trash"></i> Delete Task</button>
         <button type="button" class="btn btn-outline" onclick="closeModal('taskDetailModal')">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- LOGIN & REGISTER JWT MODAL -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="authModalTitle">Sign In to TaskFlow</h3>
+        <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+      </div>
+      <div style="display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+        <button id="tabAuthLogin" class="btn btn-outline" style="flex: 1; border-radius: 0; border: none; border-bottom: 2px solid var(--primary); font-weight: 700;" onclick="switchAuthTab('login')">Sign In</button>
+        <button id="tabAuthRegister" class="btn btn-outline" style="flex: 1; border-radius: 0; border: none; font-weight: 700; color: var(--text-muted);" onclick="switchAuthTab('register')">Register Account</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="submitLogin(event)">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-group"><label>Official Email *</label><input type="email" id="loginEmail" required placeholder="admin.lead@taskmanagement.com"></div>
+          <div class="form-group"><label>Password *</label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; color: var(--text-muted);">Default: admin.lead@taskmanagement.com / Password@123</span>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" onsubmit="submitRegister(event)" style="display: none;">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-group"><label>Full Name *</label><input type="text" id="regName" required placeholder="Alex Mercer"></div>
+          <div class="form-group"><label>Official Email *</label><input type="email" id="regEmail" required placeholder="alex.mercer@taskmanagement.com"></div>
+          <div class="form-group"><label>Password *</label><input type="password" id="regPassword" required placeholder="••••••••"></div>
+          <div class="form-group">
+            <label>Role *</label>
+            <select id="regRole">
+              <option value="ADMIN" selected>ADMIN</option>
+              <option value="DEVELOPER">DEVELOPER</option>
+              <option value="MANAGER">MANAGER</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
     </div>
   </div>
 
