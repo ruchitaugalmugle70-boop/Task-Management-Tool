@@ -492,6 +492,36 @@ body {
 }
 
 /* Toast */
+/* ================= FULL-SCREEN AUTH GATEWAY ================= */
+.auth-gateway-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(12px);
+}
+.auth-gateway-overlay.hidden { display: none !important; }
+
+.auth-gateway-card {
+  width: 100%; max-width: 480px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  padding: 36px 32px; color: var(--text-primary);
+  animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-google-sso {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px;
+  padding: 11px 16px; font-size: 14px; font-weight: 600; color: #1e293b;
+  cursor: pointer; transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px;
+}
+.btn-google-sso:hover {
+  background: #f8fafc; border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+}
+
 .toast-container {
   position: fixed; bottom: 24px; right: 24px;
   display: flex; flex-direction: column; gap: 8px; z-index: 200;

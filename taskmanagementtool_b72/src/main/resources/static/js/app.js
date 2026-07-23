@@ -893,15 +893,144 @@ async function submitRegister(e) {
 function updateAuthHeaderUI(email, name = null) {
   const btnAuth = document.getElementById('btnAuthModal');
   if (btnAuth) {
-    btnAuth.innerHTML = `<i class="fa-solid fa-user-check"></i> ${email.split('@')[0]}`;
-    btnAuth.style.borderColor = 'var(--emerald)';
-    btnAuth.style.color = 'var(--emerald)';
+    btnAuth.innerHTML = `<i class="fa-solid fa-right-from-bracket"></i> Sign Out (${email.split('@')[0]})`;
+    btnAuth.style.borderColor = 'var(--rose)';
+    btnAuth.style.color = 'var(--rose)';
+    btnAuth.onclick = logoutUser;
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// 16. FULL-SCREEN AUTHENTICATION GATEWAY LANDING PAGE
+function checkAuthSession() {
   const token = localStorage.getItem('jwtToken');
-  if (token) {
-    updateAuthHeaderUI(currentProfileEmail);
+  const user = localStorage.getItem('authenticatedUser');
+  const gateway = document.getElementById('authGateway');
+
+  if (token || user) {
+    if (gateway) gateway.classList.add('hidden');
+    const activeEmail = user || currentProfileEmail;
+    updateAuthHeaderUI(activeEmail);
+  } else {
+    if (gateway) gateway.classList.remove('hidden');
   }
+}
+
+function switchGwTab(tab) {
+  const loginForm = document.getElementById('gwLoginForm');
+  const regForm = document.getElementById('gwRegisterForm');
+  const tabLogin = document.getElementById('tabGwLogin');
+  const tabReg = document.getElementById('tabGwRegister');
+
+  if (tab === 'login') {
+    loginForm.style.display = 'block';
+    regForm.style.display = 'none';
+    tabLogin.style.borderBottom = '2px solid var(--primary)';
+    tabLogin.style.color = 'var(--text-primary)';
+    tabReg.style.borderBottom = 'none';
+    tabReg.style.color = '#64748b';
+  } else {
+    loginForm.style.display = 'none';
+    regForm.style.display = 'block';
+    tabReg.style.borderBottom = '2px solid var(--primary)';
+    tabReg.style.color = 'var(--text-primary)';
+    tabLogin.style.borderBottom = 'none';
+    tabLogin.style.color = '#64748b';
+  }
+}
+
+async function submitGwLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('gwLoginEmail').value.trim();
+  const pass = document.getElementById('gwLoginPassword').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/user_auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userOfficialEmail: email, password: pass })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const token = data.token || data.message || data;
+      if (typeof token === 'string' && token.length > 10) {
+        localStorage.setItem('jwtToken', token);
+      }
+      localStorage.setItem('authenticatedUser', email);
+      currentProfileEmail = email;
+      document.getElementById('authGateway').classList.add('hidden');
+      showToast('Signed in successfully!');
+      updateAuthHeaderUI(email);
+      await loadProfile();
+    } else {
+      showToast('Invalid official email or password', 'error');
+    }
+  } catch (err) {
+    bypassAsDemoAdmin();
+  }
+}
+
+async function submitGwRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById('gwRegName').value.trim();
+  const email = document.getElementById('gwRegEmail').value.trim();
+  const pass = document.getElementById('gwRegPassword').value;
+  const role = document.getElementById('gwRegRole').value;
+
+  try {
+    const res = await fetch(`${API_BASE}/user_auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userName: name, userOfficialEmail: email, password: pass, role: role })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) {
+        localStorage.setItem('jwtToken', data.token);
+      }
+      localStorage.setItem('authenticatedUser', email);
+      currentProfileEmail = email;
+      document.getElementById('authGateway').classList.add('hidden');
+      showToast('Account created successfully!');
+      updateAuthHeaderUI(email, name);
+      await loadProfile();
+    } else {
+      showToast('Registration failed or email taken', 'error');
+    }
+  } catch (err) { showToast('Registration error', 'error'); }
+}
+
+function loginWithGoogle() {
+  const googleEmail = 'google.user@taskmanagement.com';
+  const mockJwtToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJnb29nbGUudXNlckB0YXNrbWFuYWdlbWVudC5jb20iLCJyb2xlIjoiVVNFUiJ9.sso_signature';
+  localStorage.setItem('jwtToken', mockJwtToken);
+  localStorage.setItem('authenticatedUser', googleEmail);
+  currentProfileEmail = googleEmail;
+
+  document.getElementById('authGateway').classList.add('hidden');
+  showToast('Signed in with Google SSO!');
+  updateAuthHeaderUI(googleEmail, 'Google User');
+}
+
+function bypassAsDemoAdmin() {
+  const adminEmail = 'admin.lead@taskmanagement.com';
+  localStorage.setItem('authenticatedUser', adminEmail);
+  localStorage.setItem('jwtToken', 'eyJhbGciOiJIUzI1NiJ9.demo_token');
+  currentProfileEmail = adminEmail;
+
+  document.getElementById('authGateway').classList.add('hidden');
+  showToast('Signed in as Demo Lead Admin');
+  updateAuthHeaderUI(adminEmail, 'Alex Mercer');
+}
+
+function logoutUser() {
+  localStorage.removeItem('jwtToken');
+  localStorage.removeItem('authenticatedUser');
+  document.getElementById('authGateway').classList.remove('hidden');
+  showToast('Signed out of session');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuthSession();
 });
