@@ -890,26 +890,38 @@ async function submitRegister(e) {
   }
 }
 
+function toggleUserMenu() {
+  const dd = document.getElementById('userMenuDropdown');
+  if (dd) dd.classList.toggle('active');
+}
+
 function updateAuthHeaderUI(email, name = null) {
-  const btnAuth = document.getElementById('btnAuthModal');
-  if (btnAuth) {
-    btnAuth.innerHTML = `<i class="fa-solid fa-right-from-bracket"></i> Sign Out (${email.split('@')[0]})`;
-    btnAuth.style.borderColor = 'var(--rose)';
-    btnAuth.style.color = 'var(--rose)';
-    btnAuth.onclick = logoutUser;
-  }
+  const displayName = name || localStorage.getItem('authenticatedUserName') || email.split('@')[0].replace('.', ' ');
+  const formattedName = displayName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const initials = formattedName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+  const headerName = document.getElementById('headerName');
+  const headerAvatar = document.getElementById('headerAvatar');
+  const menuName = document.getElementById('userMenuName');
+  const menuEmail = document.getElementById('userMenuEmail');
+
+  if (headerName) headerName.textContent = formattedName;
+  if (headerAvatar) headerAvatar.textContent = initials;
+  if (menuName) menuName.textContent = formattedName;
+  if (menuEmail) menuEmail.textContent = email;
 }
 
 // 16. FULL-SCREEN AUTHENTICATION GATEWAY LANDING PAGE
 function checkAuthSession() {
   const token = localStorage.getItem('jwtToken');
   const user = localStorage.getItem('authenticatedUser');
+  const userName = localStorage.getItem('authenticatedUserName');
   const gateway = document.getElementById('authGateway');
 
   if (token || user) {
     if (gateway) gateway.classList.add('hidden');
     const activeEmail = user || currentProfileEmail;
-    updateAuthHeaderUI(activeEmail);
+    updateAuthHeaderUI(activeEmail, userName);
   } else {
     if (gateway) gateway.classList.remove('hidden');
   }
@@ -956,11 +968,13 @@ async function submitGwLogin(e) {
       if (typeof token === 'string' && token.length > 10) {
         localStorage.setItem('jwtToken', token);
       }
+      const displayName = email.split('@')[0].replace('.', ' ');
       localStorage.setItem('authenticatedUser', email);
+      localStorage.setItem('authenticatedUserName', displayName);
       currentProfileEmail = email;
       document.getElementById('authGateway').classList.add('hidden');
       showToast('Signed in successfully!');
-      updateAuthHeaderUI(email);
+      updateAuthHeaderUI(email, displayName);
       await loadProfile();
     } else {
       showToast('Invalid official email or password', 'error');
@@ -990,6 +1004,7 @@ async function submitGwRegister(e) {
         localStorage.setItem('jwtToken', data.token);
       }
       localStorage.setItem('authenticatedUser', email);
+      localStorage.setItem('authenticatedUserName', name);
       currentProfileEmail = email;
       document.getElementById('authGateway').classList.add('hidden');
       showToast('Account created successfully!');
@@ -1003,30 +1018,35 @@ async function submitGwRegister(e) {
 
 function loginWithGoogle() {
   const googleEmail = 'google.user@taskmanagement.com';
+  const googleName = 'Google User';
   const mockJwtToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJnb29nbGUudXNlckB0YXNrbWFuYWdlbWVudC5jb20iLCJyb2xlIjoiVVNFUiJ9.sso_signature';
   localStorage.setItem('jwtToken', mockJwtToken);
   localStorage.setItem('authenticatedUser', googleEmail);
+  localStorage.setItem('authenticatedUserName', googleName);
   currentProfileEmail = googleEmail;
 
   document.getElementById('authGateway').classList.add('hidden');
   showToast('Signed in with Google SSO!');
-  updateAuthHeaderUI(googleEmail, 'Google User');
+  updateAuthHeaderUI(googleEmail, googleName);
 }
 
 function bypassAsDemoAdmin() {
   const adminEmail = 'admin.lead@taskmanagement.com';
+  const adminName = 'Alex Mercer';
   localStorage.setItem('authenticatedUser', adminEmail);
+  localStorage.setItem('authenticatedUserName', adminName);
   localStorage.setItem('jwtToken', 'eyJhbGciOiJIUzI1NiJ9.demo_token');
   currentProfileEmail = adminEmail;
 
   document.getElementById('authGateway').classList.add('hidden');
-  showToast('Signed in as Demo Lead Admin');
-  updateAuthHeaderUI(adminEmail, 'Alex Mercer');
+  showToast('Signed in as Lead Admin');
+  updateAuthHeaderUI(adminEmail, adminName);
 }
 
 function logoutUser() {
   localStorage.removeItem('jwtToken');
   localStorage.removeItem('authenticatedUser');
+  localStorage.removeItem('authenticatedUserName');
   document.getElementById('authGateway').classList.remove('hidden');
   showToast('Signed out of session');
 }
