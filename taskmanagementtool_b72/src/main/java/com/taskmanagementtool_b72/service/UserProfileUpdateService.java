@@ -48,7 +48,17 @@ public class UserProfileUpdateService {
 
 	public UserProfileUpdateDTO getProfileByEmail(String userEmail) {
 		UserProfileUpdate user = userProfileUpdateRepo.findByUserEmail(userEmail)
-				.orElseThrow(() -> new RuntimeException("profile not found"));
+				.orElseGet(() -> {
+					UserProfileUpdate p = new UserProfileUpdate();
+					p.setUserEmail(userEmail);
+					String name = userEmail.contains("@") ? userEmail.split("@")[0].replace('.', ' ') : userEmail;
+					p.setUserName(name);
+					p.setDepartment("Engineering");
+					p.setDesignation("Software Engineer");
+					p.setOrganizationName("TaskFlow Enterprise");
+					p.setActive(true);
+					return userProfileUpdateRepo.save(p);
+				});
 		return toDto(user);
 	}
 
