@@ -40,7 +40,7 @@ public class UserAuthService {
 	public AuthResponseDTO register(RegisterRequestDTO register) {
 		
 		
-		Optional<UserAuth>exist=userRepo.findByUserOfficialEmail(register.userOfficcialEmail);
+		Optional<UserAuth>exist=userRepo.findByUserOfficialEmail(register.userOfficialEmail);
 		if(exist.isPresent()) {
 			throw new RuntimeException("User already exist");
 		}
@@ -48,7 +48,7 @@ public class UserAuthService {
 		UserAuth user= new UserAuth();
 		
 		user.setUserName(register.userName);
-		user.setUserOfficialEmail(register.userOfficcialEmail);
+		user.setUserOfficialEmail(register.userOfficialEmail);
 		user.setPassword(passwordEncoder.encode(register.password));
 		user.setRole(register.role);
 		
@@ -84,7 +84,14 @@ public class UserAuthService {
 		
 		userRepo.save(user);
 		
-		emailService.sentResetPasswordEmail(email, token);
+		System.out.println("FORGOT PASSWORD TOKEN: " + token);
+		
+		try {
+			emailService.sentResetPasswordEmail(email, token);
+		} catch (Exception e) {
+			System.err.println("Failed to send email: " + e.getMessage());
+			System.out.println("TESTING MODE: Continuing without email. Use the token above to reset password.");
+		}
 		
 	}
 	

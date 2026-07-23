@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Enterprise - Full Stack Agile Task Platform</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navbar Header -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-logo">TF</div>
+      <span class="brand-title">TaskFlow</span>
+      <span class="brand-badge">Enterprise v7.2</span>
+    </div>
+
+    <div class="header-center">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="globalSearch" placeholder="Search tasks, sprints, or team members...">
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Notification Dropdown -->
+      <div class="notif-wrapper">
+        <button class="notif-btn" onclick="toggleNotifications()">
+          <i class="fa-regular fa-bell"></i>
+          <span class="notif-count" id="notifBadge">0</span>
+        </button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-header">
+            <span>Notifications</span>
+            <span style="font-size: 11px; color: var(--primary); cursor: pointer;" onclick="loadNotifications()">Refresh</span>
+          </div>
+          <div class="notif-list" id="notifList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="openModal('createIssueModal')">
+        <i class="fa-solid fa-plus"></i> New Task
+      </button>
+
+      <div class="user-pill" onclick="switchTab('profile')">
+        <div class="user-avatar" id="headerAvatar">AM</div>
+        <span class="user-name" id="headerName">Alex Mercer</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="app-container">
+
+    <!-- Dark Sidebar -->
+    <aside class="app-sidebar">
+      <div>
+        <div class="sidebar-section-label">Main Workspace</div>
+        <ul class="nav-list">
+          <li class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <i class="fa-solid fa-chart-pie"></i> Overview Dashboard
+          </li>
+          <li class="nav-item" data-tab="kanban" onclick="switchTab('kanban')">
+            <i class="fa-solid fa-columns"></i> Agile Kanban Board
+          </li>
+          <li class="nav-item" data-tab="backlog" onclick="switchTab('backlog')">
+            <i class="fa-solid fa-list-check"></i> Backlog & Sprints
+          </li>
+        </ul>
+
+        <div class="sidebar-section-label">Management Modules</div>
+        <ul class="nav-list">
+          <li class="nav-item" data-tab="labels" onclick="switchTab('labels')">
+            <i class="fa-solid fa-tags"></i> Labels & Tags
+          </li>
+          <li class="nav-item" data-tab="timelogs" onclick="switchTab('timelogs')">
+            <i class="fa-solid fa-stopwatch"></i> Time Tracking
+          </li>
+          <li class="nav-item" data-tab="teams" onclick="switchTab('teams')">
+            <i class="fa-solid fa-users"></i> Team Members
+          </li>
+          <li class="nav-item" data-tab="activities" onclick="switchTab('activities')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Audit Activity Stream
+          </li>
+          <li class="nav-item" data-tab="reports" onclick="switchTab('reports')">
+            <i class="fa-solid fa-chart-line"></i> Analytics & Velocity
+          </li>
+          <li class="nav-item" data-tab="profile" onclick="switchTab('profile')">
+            <i class="fa-solid fa-user-gear"></i> User Profile
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-project-section">
+        <label>Active Project</label>
+        <select id="projectSelect" onchange="onProjectChanged()"></select>
+      </div>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="main-content">
+
+      <!-- 1. DASHBOARD TAB -->
+      <section id="tab-dashboard" class="tab-pane active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Executive Dashboard</h1>
+            <p class="page-subtitle">Real-time stats across active projects, workload, and sprint velocity.</p>
+          </div>
+          <button class="btn btn-outline" onclick="loadDashboard()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">Total Issues</span>
+              <div class="metric-icon indigo"><i class="fa-solid fa-list-check"></i></div>
+            </div>
+            <div class="metric-value" id="statTotal">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">In Progress</span>
+              <div class="metric-icon amber"><i class="fa-solid fa-spinner"></i></div>
+            </div>
+            <div class="metric-value" id="statInProgress">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">Completed</span>
+              <div class="metric-icon emerald"><i class="fa-solid fa-check-double"></i></div>
+            </div>
+            <div class="metric-value" id="statCompleted">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">Active Sprints</span>
+              <div class="metric-icon rose"><i class="fa-solid fa-bolt"></i></div>
+            </div>
+            <div class="metric-value" id="statSprints">0</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-header">
+              <span class="metric-label">Team Members</span>
+              <div class="metric-icon purple"><i class="fa-solid fa-users"></i></div>
+            </div>
+            <div class="metric-value" id="statMembers">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span><i class="fa-solid fa-layer-group"></i> Enterprise Projects</span>
+            <button class="btn btn-outline btn-sm" onclick="openModal('createProjectModal')">+ New Project</button>
+          </div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Key</th><th>Name</th><th>Lead Email</th><th>Created</th></tr></thead>
+              <tbody id="projectsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. KANBAN BOARD TAB -->
+      <section id="tab-kanban" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Agile Kanban Board</h1>
+            <p class="page-subtitle">Drag cards across columns. WIP limits enforce operational capacity.</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" onclick="loadKanban()"><i class="fa-solid fa-rotate"></i> Reload Board</button>
+            <button class="btn btn-primary" onclick="openModal('createIssueModal')">+ Add Card</button>
+          </div>
+        </div>
+
+        <div class="kanban-board" id="kanbanBoard"></div>
+      </section>
+
+      <!-- 3. BACKLOG TAB -->
+      <section id="tab-backlog" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Product Backlog & Sprints</h1>
+            <p class="page-subtitle">Prioritize user stories and assign issues to active execution sprints.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('createSprintModal')">+ Create Sprint</button>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-header"><span><i class="fa-solid fa-bolt"></i> Sprints</span></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Sprint Name</th><th>State</th><th>Goal</th><th>Start Date</th><th>End Date</th><th>Action</th></tr></thead>
+              <tbody id="sprintsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span><i class="fa-solid fa-list-ul"></i> Backlog Items</span></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Key</th><th>Title</th><th>Type</th><th>Priority</th><th>Labels</th><th>Assignee</th><th>Action</th></tr></thead>
+              <tbody id="backlogBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. LABELS & TAGS TAB -->
+      <section id="tab-labels" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Labels & Tags Manager</h1>
+            <p class="page-subtitle">Categorize tasks across frontend, backend, security, and urgent priorities.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('createLabelModal')">+ Create Label</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span><i class="fa-solid fa-tags"></i> Project Labels</span></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Badge Preview</th><th>Label Name</th><th>Color Hex</th><th>Actions</th></tr></thead>
+              <tbody id="labelsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. TIME TRACKING TAB -->
+      <section id="tab-timelogs" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Time Tracking Logs</h1>
+            <p class="page-subtitle">Track billable work hours logged by engineers across project tasks.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('logTimeModal')">+ Log Work Hours</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span><i class="fa-solid fa-stopwatch"></i> Work Logs</span></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Task ID</th><th>Logged By</th><th>Hours</th><th>Description</th><th>Timestamp</th></tr></thead>
+              <tbody id="timelogsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. TEAM MEMBERS TAB -->
+      <section id="tab-teams" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Team Members & Roles</h1>
+            <p class="page-subtitle">Manage engineering team roles, assignments, and member access.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('addTeamMemberModal')">+ Add Member</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span><i class="fa-solid fa-users"></i> Team Directory</span></div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Member Name</th><th>Email</th><th>Role</th><th>Joined Date</th><th>Action</th></tr></thead>
+              <tbody id="teamBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7. AUDIT STREAM TAB -->
+      <section id="tab-activities" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Audit Activity Stream</h1>
+            <p class="page-subtitle">Chronological system events, issue status transitions, and sprint actions.</p>
+          </div>
+          <button class="btn btn-outline" onclick="loadActivities()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <table class="data-table">
+              <thead><tr><th>Action</th><th>Performed By</th><th>Target Entity</th><th>Details</th><th>Timestamp</th></tr></thead>
+              <tbody id="activitiesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. ANALYTICS TAB -->
+      <section id="tab-reports" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Analytics & Reports</h1>
+            <p class="page-subtitle">Sprint completion rates, status breakdown, and workload distribution.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="card" style="padding: 20px;">
+            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Workload Distribution</h3>
+            <div id="workloadReport"></div>
+          </div>
+          <div class="card" style="padding: 20px;">
+            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Workflow Status Breakdown</h3>
+            <div id="flowReport"></div>
+          </div>
+          <div class="card" style="padding: 20px; grid-column: span 2;">
+            <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-chart-line" style="color: var(--emerald);"></i> Sprint Velocity & Completion</h3>
+            <div id="velocityReport"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. PROFILE TAB -->
+      <section id="tab-profile" class="tab-pane">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">User Profile Settings</h1>
+            <p class="page-subtitle">Update your official credentials, title, and organization details.</p>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 24px; max-width: 600px;">
+          <form id="profileForm" onsubmit="saveProfile(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="profEmail" required placeholder="user@company.com">
+              </div>
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="profName" required>
+              </div>
+              <div class="form-group">
+                <label>Department</label>
+                <input type="text" id="profDept">
+              </div>
+              <div class="form-group">
+                <label>Designation</label>
+                <input type="text" id="profTitle">
+              </div>
+              <div class="form-group full-width">
+                <label>Organization</label>
+                <input type="text" id="profOrg">
+              </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- CREATE TASK MODAL -->
+  <div class="modal-overlay" id="createIssueModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Task</h3>
+        <button class="close-btn" onclick="closeModal('createIssueModal')">&times;</button>
+      </div>
+      <form onsubmit="submitIssue(event)">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Task Title *</label>
+            <input type="text" id="newIssueTitle" required placeholder="e.g. Implement Webhook Retries">
+          </div>
+          <div class="form-group">
+            <label>Issue Type</label>
+            <select id="newIssueType">
+              <option value="TASK" selected>TASK</option>
+              <option value="STORY">STORY</option>
+              <option value="BUG">BUG</option>
+              <option value="EPIC">EPIC</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="newIssuePriority">
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM" selected>MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+              <option value="CRITICAL">CRITICAL</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assignee Email</label>
+            <input type="email" id="newIssueAssignee" placeholder="dev@company.com">
+          </div>
+          <div class="form-group">
+            <label>Labels (Comma separated)</label>
+            <input type="text" id="newIssueLabels" placeholder="Frontend,Urgent">
+          </div>
+          <div class="form-group full-width">
+            <label>Description</label>
+            <textarea id="newIssueDesc" rows="3" placeholder="Provide task requirements..."></textarea>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createIssueModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE PROJECT MODAL -->
+  <div class="modal-overlay" id="createProjectModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Project</h3>
+        <button class="close-btn" onclick="closeModal('createProjectModal')">&times;</button>
+      </div>
+      <form onsubmit="submitProject(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Project Key *</label><input type="text" id="newProjKey" required placeholder="DEV"></div>
+          <div class="form-group"><label>Project Name *</label><input type="text" id="newProjName" required placeholder="Developer Portal"></div>
+          <div class="form-group full-width"><label>Lead Email</label><input type="email" id="newProjLead" value="admin.lead@taskmanagement.com"></div>
+          <div class="form-group full-width"><label>Description</label><textarea id="newProjDesc" rows="2" placeholder="Brief project summary..."></textarea></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createProjectModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Project</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE SPRINT MODAL -->
+  <div class="modal-overlay" id="createSprintModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Sprint</h3>
+        <button class="close-btn" onclick="closeModal('createSprintModal')">&times;</button>
+      </div>
+      <form onsubmit="submitSprint(event)">
+        <div class="form-grid">
+          <div class="form-group full-width"><label>Sprint Name *</label><input type="text" id="newSprintName" required placeholder="Sprint 3 - Security Upgrade"></div>
+          <div class="form-group full-width"><label>Goal</label><textarea id="newSprintGoal" rows="2" placeholder="Primary objective..."></textarea></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createSprintModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Start Sprint</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE LABEL MODAL -->
+  <div class="modal-overlay" id="createLabelModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Label</h3>
+        <button class="close-btn" onclick="closeModal('createLabelModal')">&times;</button>
+      </div>
+      <form onsubmit="submitLabel(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Label Name *</label><input type="text" id="newLabelName" required placeholder="DevOps"></div>
+          <div class="form-group"><label>Color Hex *</label><input type="color" id="newLabelColor" value="#4f46e5" style="height: 42px; padding: 2px;"></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('createLabelModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Label</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOG TIME MODAL -->
+  <div class="modal-overlay" id="logTimeModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Work Hours</h3>
+        <button class="close-btn" onclick="closeModal('logTimeModal')">&times;</button>
+      </div>
+      <form onsubmit="submitTimeLog(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Issue ID *</label><input type="number" id="timeLogIssueId" required value="2"></div>
+          <div class="form-group"><label>Hours Worked *</label><input type="number" step="0.5" id="timeLogHours" required value="2.5"></div>
+          <div class="form-group full-width"><label>User Email</label><input type="email" id="timeLogUser" value="admin.lead@taskmanagement.com"></div>
+          <div class="form-group full-width"><label>Description</label><textarea id="timeLogDesc" rows="2" placeholder="What was completed..."></textarea></div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('logTimeModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Time Log</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD TEAM MEMBER MODAL -->
+  <div class="modal-overlay" id="addTeamMemberModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Team Member</h3>
+        <button class="close-btn" onclick="closeModal('addTeamMemberModal')">&times;</button>
+      </div>
+      <form onsubmit="submitTeamMember(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Member Name *</label><input type="text" id="newMemberName" required placeholder="Samantha Cole"></div>
+          <div class="form-group"><label>Member Email *</label><input type="email" id="newMemberEmail" required placeholder="samantha@taskmanagement.com"></div>
+          <div class="form-group full-width">
+            <label>Role</label>
+            <select id="newMemberRole">
+              <option value="DEVELOPER" selected>DEVELOPER</option>
+              <option value="LEAD">LEAD</option>
+              <option value="TESTER">TESTER</option>
+              <option value="DESIGNER">DESIGNER</option>
+              <option value="MANAGER">MANAGER</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('addTeamMemberModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TASK DETAILS MODAL -->
+  <div class="modal-overlay" id="taskDetailModal">
+    <div class="modal-card" style="max-width: 660px;">
+      <div class="modal-header">
+        <div>
+          <span class="badge badge-story" id="detailIssueKey">TMT-1</span>
+          <h3 class="modal-title" id="detailIssueTitle" style="margin-top: 4px;">Task Details</h3>
+        </div>
+        <button class="close-btn" onclick="closeModal('taskDetailModal')">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; gap: 10px; align-items: center;" id="detailBadges"></div>
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Description</label>
+          <p id="detailDesc" style="font-size: 14px; color: var(--text-primary); margin-top: 4px; line-height: 1.5;"></p>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--bg-subtle); border-radius: 8px;">
+          <div><span style="font-size: 11px; color: var(--text-muted);">Assignee:</span> <strong id="detailAssignee">dev@company.com</strong></div>
+          <div><span style="font-size: 11px; color: var(--text-muted);">Reporter:</span> <strong id="detailReporter">admin@company.com</strong></div>
+        </div>
+
+        <div>
+          <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Discussion & Comments</label>
+          <div id="detailComments" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px; max-height: 160px; overflow-y: auto;"></div>
+          <form onsubmit="submitComment(event)" style="margin-top: 10px; display: flex; gap: 8px;">
+            <input type="text" id="newCommentBody" required placeholder="Write a comment..." style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Post</button>
+          </form>
+        </div>
+      </div>
+      <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn btn-danger btn-sm" id="btnDeleteTask" onclick="deleteCurrentTask()"><i class="fa-solid fa-trash"></i> Delete Task</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal('taskDetailModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Engine -->
+  <script src="js/app.js"></script>
+</body>
+</html>

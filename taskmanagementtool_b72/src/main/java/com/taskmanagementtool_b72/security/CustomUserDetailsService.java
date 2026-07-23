@@ -16,7 +16,7 @@ import com.taskmanagementtool_b72.repository.UserAuthRepository;
 
 
 @Service
-public abstract class CustomUserDetailsService  implements UserDetailsService{
+public class CustomUserDetailsService  implements UserDetailsService{
 	
 	@Autowired
 	private UserAuthRepository userRepo;
@@ -35,4 +35,12 @@ public abstract class CustomUserDetailsService  implements UserDetailsService{
 		return new org.springframework.security.core.userdetails.User(user.getUserOfficialEmail(), user.getPassword(), null);
 	}
 
+	@Override
+	public UserDetails loadUserByUsername(String username) throws org.springframework.security.core.userdetails.UsernameNotFoundException {
+		try {
+			return loadUserByEmail(username);
+		} catch (Exception e) {
+			throw new org.springframework.security.core.userdetails.UsernameNotFoundException(e.getMessage());
+		}
+	}
 }

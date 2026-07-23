@@ -32,9 +32,9 @@ public class UserAuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<String>login(@RequestBody LoginRequestDTO login){
-		userService.login(login);
-		return ResponseEntity.ok("Login successful");
+	public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO login) {
+		String token = userService.login(login);
+		return ResponseEntity.ok(new AuthResponseDTO(token, "Login successful"));
 	}
 	
 	@PostMapping("/forgot_password")
@@ -44,8 +44,8 @@ public class UserAuthController {
 	}
 	
 	@PostMapping("/reset_password")
-	public ResponseEntity<String>resetPassword(@PathVariable String token,@PathVariable String newPassword){
-		userService.resetPassword(token,newPassword );
+	public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+		userService.resetPassword(token, newPassword);
 		return ResponseEntity.ok("Password reset successful");
 	}
 	

@@ -15,7 +15,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-public abstract class JWTAuthFilter extends OncePerRequestFilter{
+@org.springframework.stereotype.Component
+public class JWTAuthFilter extends OncePerRequestFilter{
 	
 	@Autowired
 	private JWTUtil jwtUtil;

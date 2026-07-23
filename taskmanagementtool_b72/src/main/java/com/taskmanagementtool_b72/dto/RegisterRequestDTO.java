@@ -11,7 +11,7 @@ import lombok.*;
 public class RegisterRequestDTO {
 	
 	public String userName;
-	public String userOfficcialEmail;
+	public String userOfficialEmail;
 	public String password;
 	public Role role;
 	
