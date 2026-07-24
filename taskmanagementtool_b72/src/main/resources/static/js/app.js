@@ -1122,6 +1122,7 @@ function loginWithGoogle() {
   if (auth && typeof firebase !== 'undefined') {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
+    
     auth.signInWithPopup(provider)
       .then((result) => {
         const user = result.user;
@@ -1143,15 +1144,10 @@ function loginWithGoogle() {
         loadProfile();
       })
       .catch((error) => {
-        console.warn('Firebase Auth popup error:', error);
-        openModal('googleSsoModal');
-        renderNativeGoogleIdButton();
+        console.warn('Firebase Auth popup error, redirecting to Google:', error);
+        auth.signInWithRedirect(provider);
       });
-    return;
   }
-
-  openModal('googleSsoModal');
-  renderNativeGoogleIdButton();
 }
 
 function renderNativeGoogleIdButton() {
