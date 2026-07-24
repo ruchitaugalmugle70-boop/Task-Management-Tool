@@ -1184,11 +1184,19 @@ function renderNativeGoogleIdButton() {
 }
 
 function selectQuickGoogleAccount(name, email) {
-  const emailInput = document.getElementById('googleSsoEmail');
-  const nameInput = document.getElementById('googleSsoName');
-  if (emailInput) emailInput.value = email;
-  if (nameInput) nameInput.value = name;
-  submitGoogleSsoAccount();
+  sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(email));
+  sessionStorage.setItem('authenticatedUser', email);
+  sessionStorage.setItem('authenticatedUserName', name);
+  currentProfileEmail = email;
+
+  closeModal('googleSsoModal');
+
+  const gateway = document.getElementById('authGateway');
+  if (gateway) gateway.classList.add('hidden');
+
+  showToast(`Signed in with Google as ${name}!`);
+  updateAuthHeaderUI(email, name);
+  loadProfile();
 }
 
 function showGoogleCustomInput() {
