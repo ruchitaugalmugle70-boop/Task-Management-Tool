@@ -979,10 +979,36 @@ function updateAuthHeaderUI(email, name = null, picture = null) {
 
 // 16. FULL-SCREEN AUTHENTICATION GATEWAY LANDING PAGE
 function checkAuthSession() {
-  // Clear any legacy persistent localStorage to force Sign Up page on website open
+  // Clear legacy persistent localStorage to force Auth Gateway on fresh tab
   localStorage.removeItem('jwtToken');
   localStorage.removeItem('authenticatedUser');
   localStorage.removeItem('authenticatedUserName');
+
+  // Check Firebase Google Auth Redirect Result
+  const auth = initFirebaseAuth();
+  if (auth && typeof firebase !== 'undefined') {
+    auth.getRedirectResult().then((result) => {
+      if (result && result.user) {
+        const user = result.user;
+        const googleName = user.displayName || user.email.split('@')[0];
+        const googleEmail = user.email;
+        const googlePicture = user.photoURL;
+
+        sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(googleEmail));
+        sessionStorage.setItem('authenticatedUser', googleEmail);
+        sessionStorage.setItem('authenticatedUserName', googleName);
+        if (googlePicture) sessionStorage.setItem('authenticatedUserPicture', googlePicture);
+        currentProfileEmail = googleEmail;
+
+        const gateway = document.getElementById('authGateway');
+        if (gateway) gateway.classList.add('hidden');
+
+        showToast(`Signed in with Google as ${googleName}!`);
+        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
+        loadProfile();
+      }
+    }).catch((err) => console.warn('Redirect Result Info:', err));
+  }
 
   const token = sessionStorage.getItem('jwtToken');
   const user = sessionStorage.getItem('authenticatedUser');
@@ -997,6 +1023,18 @@ function checkAuthSession() {
     if (gateway) gateway.classList.remove('hidden');
     switchGwTab('register');
   }
+}
+
+function loginWithGoogle() {
+  const auth = initFirebaseAuth();
+  if (auth && typeof firebase !== 'undefined') {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    auth.signInWithRedirect(provider);
+    return;
+  }
+
+  showToast('Initializing Google Sign-In...', 'info');
 }
 
 function switchGwTab(tab) {
@@ -1117,38 +1155,6 @@ function initFirebaseAuth() {
   return null;
 }
 
-function loginWithGoogle() {
-  const auth = initFirebaseAuth();
-  if (auth && typeof firebase !== 'undefined') {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    
-    auth.signInWithPopup(provider)
-      .then((result) => {
-        const user = result.user;
-        const googleName = user.displayName || user.email.split('@')[0];
-        const googleEmail = user.email;
-        const googlePicture = user.photoURL;
-
-        sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(googleEmail));
-        sessionStorage.setItem('authenticatedUser', googleEmail);
-        sessionStorage.setItem('authenticatedUserName', googleName);
-        if (googlePicture) sessionStorage.setItem('authenticatedUserPicture', googlePicture);
-        currentProfileEmail = googleEmail;
-
-        const gateway = document.getElementById('authGateway');
-        if (gateway) gateway.classList.add('hidden');
-
-        showToast(`Signed in with Google as ${googleName}!`);
-        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
-        loadProfile();
-      })
-      .catch((error) => {
-        console.warn('Firebase Auth popup error, redirecting to Google:', error);
-        auth.signInWithRedirect(provider);
-      });
-  }
-}
 
 function renderNativeGoogleIdButton() {
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
