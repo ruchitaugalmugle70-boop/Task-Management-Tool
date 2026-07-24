@@ -1118,6 +1118,9 @@ function initFirebaseAuth() {
 }
 
 function loginWithGoogle() {
+  const form = document.getElementById('googleCustomForm');
+  if (form) form.style.display = 'none';
+
   openModal('googleSsoModal');
 
   const auth = initFirebaseAuth();
