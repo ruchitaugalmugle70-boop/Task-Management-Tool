@@ -1118,7 +1118,6 @@ function initFirebaseAuth() {
 }
 
 function loginWithGoogle() {
-  // 1. Try Firebase Google Popup Auth if Firebase config is set
   const auth = initFirebaseAuth();
   if (auth && typeof firebase !== 'undefined') {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -1146,12 +1145,42 @@ function loginWithGoogle() {
       .catch((error) => {
         console.warn('Firebase Auth popup error:', error);
         openModal('googleSsoModal');
+        renderNativeGoogleIdButton();
       });
     return;
   }
 
-  // 2. Fallback to Google Account Selector Modal
   openModal('googleSsoModal');
+  renderNativeGoogleIdButton();
+}
+
+function renderNativeGoogleIdButton() {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.initialize({
+        client_id: '628192357598-taskflow.apps.googleusercontent.com',
+        callback: handleGoogleRealtimeCredentialResponse,
+        auto_select: true
+      });
+
+      const container = document.getElementById('googleIdentityBtnModal');
+      if (container) {
+        container.innerHTML = '';
+        google.accounts.id.renderButton(container, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          width: 320,
+          shape: 'rectangular'
+        });
+      }
+
+      google.accounts.id.prompt();
+    } catch (e) {
+      console.warn('Google Identity error:', e);
+    }
+  }
 }
 
 function selectQuickGoogleAccount(name, email) {
