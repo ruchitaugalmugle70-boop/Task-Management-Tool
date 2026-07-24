@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.taskmanagementtool_b72.entity.ActivityLog;
 import com.taskmanagementtool_b72.service.ActivityLogService;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 @RestController
 @RequestMapping("/api/activities")
 public class ActivityLogController {
@@ -21,5 +24,16 @@ public class ActivityLogController {
 	@GetMapping
 	public ResponseEntity<List<ActivityLog>> getRecentActivities() {
 		return ResponseEntity.ok(activityLogService.getRecentActivities());
+	}
+
+	@PostMapping
+	public ResponseEntity<ActivityLog> saveActivity(@RequestBody ActivityLog log) {
+		return ResponseEntity.ok(activityLogService.logActivity(
+			log.getAction(),
+			log.getPerformedBy(),
+			log.getEntityType(),
+			log.getEntityId(),
+			log.getDetails()
+		));
 	}
 }

@@ -534,3 +534,14 @@ body {
 }
 .toast.success { border-left: 4px solid var(--emerald); }
 .toast.error { border-left: 4px solid var(--rose); }
+
+.google-account-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 14px;
+  background: #ffffff; cursor: pointer; text-align: left; transition: all 0.2s ease;
+  width: 100%;
+}
+.google-account-item:hover {
+  background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
