@@ -1118,6 +1118,8 @@ function initFirebaseAuth() {
 }
 
 function loginWithGoogle() {
+  openModal('googleSsoModal');
+
   const auth = initFirebaseAuth();
   if (auth && typeof firebase !== 'undefined') {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -1129,6 +1131,8 @@ function loginWithGoogle() {
         const googleName = user.displayName || user.email.split('@')[0];
         const googleEmail = user.email;
         const googlePicture = user.photoURL;
+
+        closeModal('googleSsoModal');
 
         sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(googleEmail));
         sessionStorage.setItem('authenticatedUser', googleEmail);
@@ -1144,8 +1148,7 @@ function loginWithGoogle() {
         loadProfile();
       })
       .catch((error) => {
-        console.warn('Firebase Auth popup error, redirecting to Google:', error);
-        auth.signInWithRedirect(provider);
+        console.warn('Firebase Auth popup info:', error);
       });
   }
 }
