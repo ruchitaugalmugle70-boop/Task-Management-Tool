@@ -977,42 +977,27 @@ function updateAuthHeaderUI(email, name = null, picture = null) {
   if (menuEmail) menuEmail.textContent = email;
 }
 
-// 16. FULL-SCREEN AUTHENTICATION GATEWAY LANDING PAGE
-function checkAuthSession() {
-  // Clear legacy persistent localStorage to force Auth Gateway on fresh tab
-  localStorage.removeItem('jwtToken');
-  localStorage.removeItem('authenticatedUser');
-  localStorage.removeItem('authenticatedUserName');
+// Helper to sync auth session across sessionStorage and localStorage
+function setAuthSession(email, name, picture, token) {
+  const jwtToken = token || ('firebase_token_' + btoa(email));
+  sessionStorage.setItem('jwtToken', jwtToken);
+  sessionStorage.setItem('authenticatedUser', email);
+  sessionStorage.setItem('authenticatedUserName', name);
+  localStorage.setItem('jwtToken', jwtToken);
+  localStorage.setItem('authenticatedUser', email);
+  localStorage.setItem('authenticatedUserName', name);
 
-  // Check Firebase Google Auth Redirect Result
-  const auth = initFirebaseAuth();
-  if (auth && typeof firebase !== 'undefined') {
-    auth.getRedirectResult().then((result) => {
-      if (result && result.user) {
-        const user = result.user;
-        const googleName = user.displayName || user.email.split('@')[0];
-        const googleEmail = user.email;
-        const googlePicture = user.photoURL;
-
-        sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(googleEmail));
-        sessionStorage.setItem('authenticatedUser', googleEmail);
-        sessionStorage.setItem('authenticatedUserName', googleName);
-        if (googlePicture) sessionStorage.setItem('authenticatedUserPicture', googlePicture);
-        currentProfileEmail = googleEmail;
-
-        const gateway = document.getElementById('authGateway');
-        if (gateway) gateway.classList.add('hidden');
-
-        showToast(`Signed in with Google as ${googleName}!`);
-        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
-        loadProfile();
-      }
-    }).catch((err) => console.warn('Redirect Result Info:', err));
+  if (picture) {
+    sessionStorage.setItem('authenticatedUserPicture', picture);
+    localStorage.setItem('authenticatedUserPicture', picture);
   }
+  currentProfileEmail = email;
+}
 
-  const token = sessionStorage.getItem('jwtToken');
-  const user = sessionStorage.getItem('authenticatedUser');
-  const userName = sessionStorage.getItem('authenticatedUserName');
+function checkAuthSession() {
+  const token = sessionStorage.getItem('jwtToken') || localStorage.getItem('jwtToken');
+  const user = sessionStorage.getItem('authenticatedUser') || localStorage.getItem('authenticatedUser');
+  const userName = sessionStorage.getItem('authenticatedUserName') || localStorage.getItem('authenticatedUserName');
   const gateway = document.getElementById('authGateway');
 
   if (token || user) {
@@ -1023,18 +1008,86 @@ function checkAuthSession() {
     if (gateway) gateway.classList.remove('hidden');
     switchGwTab('register');
   }
-}
 
-function loginWithGoogle() {
+  // Handle Firebase async redirect/state if present
   const auth = initFirebaseAuth();
   if (auth && typeof firebase !== 'undefined') {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    auth.signInWithRedirect(provider);
-    return;
-  }
+    auth.getRedirectResult().then((result) => {
+      if (result && result.user) {
+        const user = result.user;
+        const googleName = user.displayName || user.email.split('@')[0];
+        const googleEmail = user.email;
+        const googlePicture = user.photoURL;
 
-  showToast('Initializing Google Sign-In...', 'info');
+        setAuthSession(googleEmail, googleName, googlePicture);
+
+        const gateway = document.getElementById('authGateway');
+        if (gateway) gateway.classList.add('hidden');
+
+        showToast(`Signed in with Google as ${googleName}!`);
+        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
+        loadProfile();
+      }
+    }).catch((err) => console.warn('Redirect Result Notice:', err));
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        const googleName = user.displayName || user.email.split('@')[0];
+        const googleEmail = user.email;
+        const googlePicture = user.photoURL;
+
+        setAuthSession(googleEmail, googleName, googlePicture);
+
+        const gateway = document.getElementById('authGateway');
+        if (gateway) gateway.classList.add('hidden');
+        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
+      }
+    });
+  }
+}
+
+async function loginWithGoogle() {
+  const auth = initFirebaseAuth();
+  if (auth && typeof firebase !== 'undefined') {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      showToast('Opening Google Sign-In popup...', 'info');
+
+      const result = await auth.signInWithPopup(provider);
+      if (result && result.user) {
+        const user = result.user;
+        const googleName = user.displayName || user.email.split('@')[0];
+        const googleEmail = user.email;
+        const googlePicture = user.photoURL;
+
+        setAuthSession(googleEmail, googleName, googlePicture);
+
+        const gateway = document.getElementById('authGateway');
+        if (gateway) gateway.classList.add('hidden');
+
+        showToast(`Signed in with Google as ${googleName}!`);
+        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
+        await loadProfile();
+        return;
+      }
+    } catch (err) {
+      console.warn('Firebase Popup Sign-In notice or fallback:', err);
+      openGoogleSsoModal();
+      return;
+    }
+  }
+  openGoogleSsoModal();
+}
+
+function openGoogleSsoModal() {
+  const modal = document.getElementById('googleSsoModal');
+  if (modal) {
+    openModal('googleSsoModal');
+    renderNativeGoogleIdButton();
+  } else {
+    selectQuickGoogleAccount('Google User', 'user.google@gmail.com');
+  }
 }
 
 function switchGwTab(tab) {
@@ -1186,11 +1239,7 @@ function renderNativeGoogleIdButton() {
 }
 
 function selectQuickGoogleAccount(name, email) {
-  sessionStorage.setItem('jwtToken', 'firebase_token_' + btoa(email));
-  sessionStorage.setItem('authenticatedUser', email);
-  sessionStorage.setItem('authenticatedUserName', name);
-  currentProfileEmail = email;
-
+  setAuthSession(email, name, null, 'firebase_token_' + btoa(email));
   closeModal('googleSsoModal');
 
   const gateway = document.getElementById('authGateway');
@@ -1231,11 +1280,11 @@ function openGoogleOAuthPopup() {
     const timer = setInterval(() => {
       if (popup.closed) {
         clearInterval(timer);
-        openModal('googleSsoModal');
+        openGoogleSsoModal();
       }
     }, 800);
   } else {
-    openModal('googleSsoModal');
+    openGoogleSsoModal();
   }
 }
 
@@ -1244,11 +1293,7 @@ function handleGoogleUserInfoResponse(userInfo) {
   const googleName = userInfo.name || userInfo.given_name || googleEmail.split('@')[0];
   const googlePicture = userInfo.picture || null;
 
-  sessionStorage.setItem('jwtToken', 'google_sso_' + btoa(googleEmail));
-  sessionStorage.setItem('authenticatedUser', googleEmail);
-  sessionStorage.setItem('authenticatedUserName', googleName);
-  if (googlePicture) sessionStorage.setItem('authenticatedUserPicture', googlePicture);
-  currentProfileEmail = googleEmail;
+  setAuthSession(googleEmail, googleName, googlePicture, 'google_sso_' + btoa(googleEmail));
 
   closeModal('googleSsoModal');
   const gateway = document.getElementById('authGateway');
@@ -1271,7 +1316,7 @@ function handleGoogleRealtimeCredentialResponse(response) {
     handleGoogleUserInfoResponse(payload);
   } catch (err) {
     console.error('Google credential parse error:', err);
-    openModal('googleSsoModal');
+    openGoogleSsoModal();
   }
 }
 
@@ -1297,10 +1342,7 @@ async function submitGoogleSsoAccount(e) {
   const googleEmail = inputEmail;
   const mockJwtToken = 'eyJhbGciOiJIUzI1NiJ9.google_sso_' + btoa(googleEmail);
 
-  sessionStorage.setItem('jwtToken', mockJwtToken);
-  sessionStorage.setItem('authenticatedUser', googleEmail);
-  sessionStorage.setItem('authenticatedUserName', googleName);
-  currentProfileEmail = googleEmail;
+  setAuthSession(googleEmail, googleName, null, mockJwtToken);
 
   closeModal('googleSsoModal');
   const gateway = document.getElementById('authGateway');
@@ -1314,10 +1356,7 @@ async function submitGoogleSsoAccount(e) {
 function bypassAsDemoAdmin() {
   const adminEmail = 'admin.lead@taskmanagement.com';
   const adminName = 'Alex Mercer';
-  sessionStorage.setItem('authenticatedUser', adminEmail);
-  sessionStorage.setItem('authenticatedUserName', adminName);
-  sessionStorage.setItem('jwtToken', 'eyJhbGciOiJIUzI1NiJ9.demo_token');
-  currentProfileEmail = adminEmail;
+  setAuthSession(adminEmail, adminName, null, 'eyJhbGciOiJIUzI1NiJ9.demo_token');
 
   document.getElementById('authGateway').classList.add('hidden');
   showToast('Signed in as Lead Admin');
