@@ -1049,13 +1049,43 @@ function checkAuthSession() {
 }
 
 async function loginWithGoogle() {
-  openGoogleSsoModal();
-}
+  const auth = initFirebaseAuth();
+  if (auth && typeof firebase !== 'undefined') {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      showToast('Opening Google Sign-In account chooser...', 'info');
 
-function openGoogleSsoModal() {
-  const modal = document.getElementById('googleSsoModal');
-  if (modal) {
-    openModal('googleSsoModal');
+      const result = await auth.signInWithPopup(provider);
+      if (result && result.user) {
+        const user = result.user;
+        const googleName = user.displayName || user.email.split('@')[0];
+        const googleEmail = user.email;
+        const googlePicture = user.photoURL;
+
+        setAuthSession(googleEmail, googleName, googlePicture);
+
+        const gateway = document.getElementById('authGateway');
+        if (gateway) gateway.classList.add('hidden');
+
+        showToast(`Signed in with Google as ${googleName}!`);
+        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
+        await loadProfile();
+        return;
+      }
+    } catch (err) {
+      console.warn('Popup sign-in notice, attempting redirect auth:', err);
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await auth.signInWithRedirect(provider);
+      } catch (redirectErr) {
+        console.error('Google Sign-In Error:', redirectErr);
+        showToast('Unable to open Google account chooser. Please check Firebase console configuration.', 'error');
+      }
+    }
+  } else {
+    showToast('Firebase Auth SDK not initialized', 'error');
   }
 }
 
