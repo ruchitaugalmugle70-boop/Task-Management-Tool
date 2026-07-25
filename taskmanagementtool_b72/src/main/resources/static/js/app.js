@@ -1056,9 +1056,6 @@ function openGoogleSsoModal() {
   const modal = document.getElementById('googleSsoModal');
   if (modal) {
     openModal('googleSsoModal');
-    renderNativeGoogleIdButton();
-  } else {
-    selectQuickGoogleAccount('Google User', 'user.google@gmail.com');
   }
 }
 
