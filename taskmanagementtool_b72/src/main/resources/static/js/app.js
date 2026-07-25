@@ -1047,36 +1047,6 @@ function checkAuthSession() {
 }
 
 async function loginWithGoogle() {
-  const auth = initFirebaseAuth();
-  if (auth && typeof firebase !== 'undefined') {
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      showToast('Opening Google Sign-In popup...', 'info');
-
-      const result = await auth.signInWithPopup(provider);
-      if (result && result.user) {
-        const user = result.user;
-        const googleName = user.displayName || user.email.split('@')[0];
-        const googleEmail = user.email;
-        const googlePicture = user.photoURL;
-
-        setAuthSession(googleEmail, googleName, googlePicture);
-
-        const gateway = document.getElementById('authGateway');
-        if (gateway) gateway.classList.add('hidden');
-
-        showToast(`Signed in with Google as ${googleName}!`);
-        updateAuthHeaderUI(googleEmail, googleName, googlePicture);
-        await loadProfile();
-        return;
-      }
-    } catch (err) {
-      console.warn('Firebase Popup Sign-In notice or fallback:', err);
-      openGoogleSsoModal();
-      return;
-    }
-  }
   openGoogleSsoModal();
 }
 
