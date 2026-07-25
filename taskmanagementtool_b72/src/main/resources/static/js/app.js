@@ -977,27 +977,29 @@ function updateAuthHeaderUI(email, name = null, picture = null) {
   if (menuEmail) menuEmail.textContent = email;
 }
 
-// Helper to sync auth session across sessionStorage and localStorage
+// Helper to set auth session (sessionStorage only — clears on tab close)
 function setAuthSession(email, name, picture, token) {
   const jwtToken = token || ('firebase_token_' + btoa(email));
   sessionStorage.setItem('jwtToken', jwtToken);
   sessionStorage.setItem('authenticatedUser', email);
   sessionStorage.setItem('authenticatedUserName', name);
-  localStorage.setItem('jwtToken', jwtToken);
-  localStorage.setItem('authenticatedUser', email);
-  localStorage.setItem('authenticatedUserName', name);
 
   if (picture) {
     sessionStorage.setItem('authenticatedUserPicture', picture);
-    localStorage.setItem('authenticatedUserPicture', picture);
   }
   currentProfileEmail = email;
 }
 
 function checkAuthSession() {
-  const token = sessionStorage.getItem('jwtToken') || localStorage.getItem('jwtToken');
-  const user = sessionStorage.getItem('authenticatedUser') || localStorage.getItem('authenticatedUser');
-  const userName = sessionStorage.getItem('authenticatedUserName') || localStorage.getItem('authenticatedUserName');
+  // Clear any persistent localStorage from previous sessions
+  localStorage.removeItem('jwtToken');
+  localStorage.removeItem('authenticatedUser');
+  localStorage.removeItem('authenticatedUserName');
+  localStorage.removeItem('authenticatedUserPicture');
+
+  const token = sessionStorage.getItem('jwtToken');
+  const user = sessionStorage.getItem('authenticatedUser');
+  const userName = sessionStorage.getItem('authenticatedUserName');
   const gateway = document.getElementById('authGateway');
 
   if (token || user) {
